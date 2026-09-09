@@ -137,6 +137,9 @@ Necrotic, Piercing, Poison, Psychic, Slashing and Sonic.
 Starts with 24 rows, add more as needed: Skill Advancement mark, Name, Rank,
 Stat, automatically derived **Stat Mod**, Check Type (Unopposed / Opposed /
 Passive / Evade) and Notes & Upgrades. Rank is tracked separately from Stat Mod.
+Choose **None** when a Skill has no associated Stat; its Stat Mod displays
+**N/A**. Use **Passive** for a Skill that does not require a Check. These choices
+remain independent for unusual or homebrew Skills.
 Use a row's **Details** button for a full Skill description, Rank Upgrades and
 extended or homebrew notes.
 

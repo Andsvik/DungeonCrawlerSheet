@@ -63,9 +63,18 @@ function sheet(t, storage = {}) {
     export: async () => { d.querySelector('[data-act="export"]').click(); return readBlob(exported); },
     import: async data => {
       const input = d.querySelector('[data-file]');
+      const before = d.querySelectorAll('#crawlerSelect option').length;
       Object.defineProperty(input, 'files', { configurable: true, value: [new w.File([JSON.stringify(data)], 'test.json', { type: 'application/json' })] });
       input.dispatchEvent(new w.Event('change', { bubbles: true }));
-      await new Promise(resolve => setTimeout(resolve, 30));
+      await new Promise((resolve, reject) => {
+        const started = Date.now();
+        const check = () => {
+          if (d.querySelectorAll('#crawlerSelect option').length > before) return resolve();
+          if (Date.now() - started > 5000) return reject(new Error('import did not finish'));
+          setTimeout(check, 10);
+        };
+        check();
+      });
     },
     print: mode => { d.querySelector(`[data-print-mode="${mode}"]`).click(); flush(); return printState; }
   };
@@ -270,4 +279,50 @@ test('resource edits do not change attacks, spells, defense or linked identity',
   s.set('resources.healthBonus', 3);
   s.set('resources.manaBonus', 10);
   for (const [el, value] of before) assert.equal(el.value, value, el.getAttribute('data-k') || el.getAttribute('data-c'));
+});
+
+test('Skills support no governing Stat without changing Check Type or Attacks', async t => {
+  const s = sheet(t);
+  const skillStat = s.field('skills.0.stat');
+  const skillCheck = s.field('skills.0.checkType');
+  const attackHitStat = s.field('attacks.0.hitStat');
+
+  assert.ok([...skillStat.options].some(option => option.value === 'None'));
+  assert.ok([...skillCheck.options].some(option => option.value === 'Passive'));
+  assert.equal([...skillCheck.options].some(option => option.value === 'None'), false);
+  assert.equal([...attackHitStat.options].some(option => option.value === 'None'), false);
+
+  s.set('skills.0.name', 'Catcher');
+  s.set('skills.0.stat', 'None');
+  assert.equal(s.value('skills.0.mod'), 'N/A');
+  assert.equal(s.value('skills.0.checkType'), '', 'Stat does not choose a Check Type');
+  s.set('skills.0.checkType', 'Passive');
+  assert.equal(s.value('skills.0.stat'), 'None', 'Check Type does not choose a Stat');
+
+  s.set('stats.STR.enh', 10);
+  s.set('skills.0.stat', 'STR');
+  assert.equal(s.value('skills.0.mod'), '+4');
+  s.set('skills.0.stat', '');
+  assert.equal(s.value('skills.0.mod'), '');
+  s.set('skills.0.stat', 'None');
+  assert.equal(s.value('skills.0.mod'), 'N/A');
+
+  s.flush();
+  const reloaded = sheet(t, s.storage());
+  assert.equal(reloaded.value('skills.0.stat'), 'None');
+  assert.equal(reloaded.value('skills.0.mod'), 'N/A');
+  assert.equal(reloaded.value('skills.0.checkType'), 'Passive');
+  const payload = await reloaded.export();
+  assert.equal(payload.fields['skills.0.stat'], 'None');
+  assert.equal(payload.fields['skills.0.checkType'], 'Passive');
+  reloaded.print('all');
+  assert.equal(reloaded.value('skills.0.mod'), 'N/A');
+  assert.equal(reloaded.d.querySelector('[data-row="skills.0"]').getAttribute('data-print-hide'), 'false');
+  reloaded.w.dispatchEvent(new reloaded.w.Event('afterprint'));
+
+  for (const locale of ['en', 'fr', 'es', 'de', 'pt']) {
+    s.change(s.d.querySelector('#langSel'), locale);
+    assert.notEqual(skillStat.querySelector('option[value="None"]').textContent, 'stat.None');
+    assert.equal(s.value('skills.0.mod'), 'N/A');
+  }
 });

@@ -2598,6 +2598,8 @@
             "check.Opposed": "Opposed",
             "check.Passive": "Passive",
             "check.Evade": "Evade",
+            "stat.None": "None",
+            "value.notApplicable": "N/A",
             "chip.inventory": "Inventory",
             "col.item": "Item",
             "col.qty": "Qty",
@@ -2826,6 +2828,8 @@
             "check.Opposed": "Opposé",
             "check.Passive": "Passif",
             "check.Evade": "Esquive",
+            "stat.None": "Aucune",
+            "value.notApplicable": "N/A",
             "chip.inventory": "Inventaire",
             "col.item": "Objet",
             "col.qty": "Qté",
@@ -3055,6 +3059,8 @@
             "check.Opposed": "Con oposición",
             "check.Passive": "Pasiva",
             "check.Evade": "Evasión",
+            "stat.None": "Ninguna",
+            "value.notApplicable": "N/A",
             "chip.inventory": "Inventario",
             "col.item": "Objeto",
             "col.qty": "Cant.",
@@ -3284,6 +3290,8 @@
             "check.Opposed": "Mit Gegner",
             "check.Passive": "Passiv",
             "check.Evade": "Ausweichen",
+            "stat.None": "Keine",
+            "value.notApplicable": "N/A",
             "chip.inventory": "Inventar",
             "col.item": "Gegenstand",
             "col.qty": "Anz.",
@@ -3513,6 +3521,8 @@
             "check.Opposed": "Com oposição",
             "check.Passive": "Passivo",
             "check.Evade": "Esquiva",
+            "stat.None": "Nenhum",
+            "value.notApplicable": "N/A",
             "chip.inventory": "Inventário",
             "col.item": "Item",
             "col.qty": "Qtd",
@@ -3960,6 +3970,12 @@
           STATS.map(function (s) {
             return '<option value="' + s + '">' + s + "</option>";
           }).join("");
+        var SKILL_STAT_OPTS =
+          '<option value=""></option>' +
+          '<option value="None" data-i18n="stat.None">None</option>' +
+          STATS.map(function (s) {
+            return '<option value="' + s + '">' + s + "</option>";
+          }).join("");
         var DICE_OPTS = [
           "",
           "d2",
@@ -4107,7 +4123,7 @@
             '<div class="rcell"><span data-i18n="col.stat">Stat</span><select data-k="' +
             b +
             'stat">' +
-            STAT_OPTS +
+            SKILL_STAT_OPTS +
             "</select></div>" +
             '<div class="rcell"><span data-i18n="col.statMod">Stat Mod</span><input data-k="' +
             b +
@@ -4639,6 +4655,11 @@
               var src = q(
                 'select[data-k$=".' + el.getAttribute("data-src") + '"]',
               );
+              if (src && src.value === "None") {
+                el.value = t("value.notApplicable");
+                el.style.opacity = "1";
+                return;
+              }
               var statMod = src ? val("stats." + src.value + ".mod") : "";
               setC(el, String(statMod).trim() === "" ? "" : mod(src.value));
             });
